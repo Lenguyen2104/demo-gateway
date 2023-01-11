@@ -12,7 +12,11 @@ keycloak-client:
   realm:  spring-micro-main
 spring:
   application:
-    name: api-gateway
+    name: demo-gateway
+    zipkin:
+      baseUrl: http://127.0.0.1:9411/
+  main:
+    web-application-type: reactive
   security:
     oauth2:
       client:
@@ -42,16 +46,10 @@ spring:
           uri: lb://demo-orchestrator
           predicates:
             - Path=/orchestrator/**
-          filters:
-            - TokenRelay=
-            - RemoveRequestHeader=Cookie
         - id: demo-authen
           uri: lb://demo-authen
           predicates:
             - Path=/authen/**
-          filters:
-            - TokenRelay=
-            - RemoveRequestHeader=Cookie
 
 eureka:
   client:
