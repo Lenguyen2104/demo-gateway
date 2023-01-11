@@ -1,0 +1,27 @@
+version: '3.4'
+services:
+  keycloak:
+    image: jboss/keycloak:11.0.0
+    volumes:
+      - ./keycloak-server/realm-export.json:/tmp/keycloak/config/realm-export.json
+    environment:
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: admin
+        KEYCLOAK_IMPORT: /tmp/keycloak/config/realm-export.json
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_SCHEMA: public
+        DB_PASSWORD: password
+    ports:
+      - "18080:18080"
+    restart: on-failure
+  elasticsearch:
+    container_name: es-container
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
+    environment:
+      - xpack.security.enabled=false
+      - "discovery.type=single-node"
+    networks:
+      - es-net
+    ports:
+      - 9200:9200
