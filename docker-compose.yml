@@ -1,92 +1,17 @@
-#version: '3.4'
-#services:
-#  keycloak:
-#    image: jboss/keycloak:11.0.0
-#    volumes:
-#      - ./keycloak-server/realm-export.json:/tmp/keycloak/config/realm-export.json
-#    environment:
-#        KEYCLOAK_USER: admin
-#        KEYCLOAK_PASSWORD: admin
-#        KEYCLOAK_IMPORT: /tmp/keycloak/config/realm-export.json
-#        DB_DATABASE: keycloak
-#        DB_USER: keycloak
-#        DB_SCHEMA: public
-#        DB_PASSWORD: password
-#    ports:
-#      - "18080:18080"
-#    restart: on-failure
-#  elasticsearch:
-#    container_name: es-container
-#    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
-#    environment:
-#      - xpack.security.enabled=false
-#      - "discovery.type=single-node"
-#    networks:
-#      - es-net
-#    ports:
-#      - 9200:9200
 version: '3.4'
 services:
-  demo-gateway:
-    build:
-      context: ./demo-gateway
-    ports:
-      - "8080:8080"
-    restart: on-failure
-    environment:
-      #overriding spring application.properties
-      - eureka.client.serviceUrl.defaultZone=http://eureka-server:9091/eureka/
-      - keycloak-client.server-url=http://10.0.0.17:18080/auth # use host name or ip of the host machine
-    depends_on:
-      - eureka-server
-  eureka-server:
-    build:
-      context: ./eureka-server
-    ports:
-      - "9091:9091"
-    restart: on-failure
-  demo-authen:
-    build:
-      context: ./demo-authen
-    ports:
-      - "9080:9080"
-    restart: on-failure
-    environment:
-      #overriding spring application.properties
-      - eureka.client.serviceUrl.defaultZone=http://eureka-server:9091/eureka/
-      - keycloak-client.server-url=http://10.0.0.17:18080/auth # use host name or ip of the host machine
-    depends_on:
-      - eureka-server
-  demo-orchestrator:
-    build:
-      context: ./demo-orchestrator
-    ports:
-      - "9081:9081"
-    restart: on-failure
-    environment:
-      #overriding spring application.properties
-      - eureka.client.serviceUrl.defaultZone=http://eureka-server:9091/eureka/
-      - keycloak-client.server-url=http://10.0.0.17:18080/auth # use host name or ip of the host machine
-    depends_on:
-      - eureka-server
   keycloak:
+    container_name: keycloak-container
     image: jboss/keycloak:11.0.0
     volumes:
       - ./keycloak-server/realm-export.json:/tmp/keycloak/config/realm-export.json
     environment:
-      KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: admin
-      KEYCLOAK_IMPORT: /tmp/keycloak/config/realm-export.json
-      DB_SCHEMA: public
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: admin
+        KEYCLOAK_IMPORT: /tmp/keycloak/config/realm-export.json
     ports:
       - "18080:18080"
-    command:
-      - "-b"
-      - "0.0.0.0"
-      - "-Djboss.socket.binding.port-offset=10000"
     restart: on-failure
-    depends_on:
-      - elasticsearch
   elasticsearch:
     container_name: es-container
     image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
@@ -96,4 +21,19 @@ services:
     networks:
       - es-net
     ports:
-      - 9200:9200
+      - "9200:9200"
+    restart: on-failure
+  zipkin:
+    container_name: zipkin-container
+    image: openzipkin/zipkin-slim
+#    command: docker run -d -p 9411:9411 openzipkin/zipkin
+    ports:
+      - "9411:9411"
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - cache:/data
